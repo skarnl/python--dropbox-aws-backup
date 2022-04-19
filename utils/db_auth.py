@@ -1,3 +1,4 @@
+import sys
 import os
 import dropbox
 import dotenv
@@ -10,7 +11,7 @@ dropbox_client_secret = os.getenv("DROPBOX_CLIENT_SECRET")
 
 if not dropbox_client_id or not dropbox_client_secret:
     print("No client_id or client_secret found, provide one in the .env file")
-    exit()
+    sys.exit()
 
 
 def get_dropbox_client():
@@ -42,7 +43,7 @@ def start_auth_flow():
         oauth_result = auth_flow.finish(auth_code)
     except Exception as e:
         print("Error: %s" % (e,))
-        exit(1)
+        sys.exit(1)
 
     print(oauth_result)
 

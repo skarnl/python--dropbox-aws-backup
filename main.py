@@ -1,5 +1,7 @@
 import os
-import dropbox_utils
+from utils import db_download, db_auth
+import shutil
+import history
 
 BASE_PHOTO_FOLDER_PATH = "/fotos"
 TEMP_FOLDER = "./__temp_folder__"
@@ -22,80 +24,81 @@ YEARS = [
     # "2021",
 ]
 
-dbx = dropbox_utils.get_dropbox_client()
+dbx = db_auth.get_dropbox_client()
 
 if not dbx:
     print("No dropbox client to work with")
     exit()
 
 
-def clear_temp_dir():
-    for root, dirs, files in os.walk(TEMP_FOLDER):
-        for file in files:
-            file_to_remove = os.path.join(root, file)
-
-            print("Remove :" + file_to_remove)
-            os.remove(file_to_remove)
-
-
-def check_temp_exists():
+def reset_temp_dir():
     if os.path.exists(TEMP_FOLDER):
-        print("Empty TEMP folder")
-        clear_temp_dir()
-    else:
-        print("Create TEMP folder")
-        os.makedirs(TEMP_FOLDER)
+        shutil.rmtree(TEMP_FOLDER)
+
+    os.makedirs(TEMP_FOLDER)
 
 
 def get_files_list(year):
+    print("Start processing {}".format(year))
+
+    hist = history.get_history()
+
+    if year in hist:
+        print("Skip {} since thats already handles fully".format(year))
+        return
+
+    folder_list = []
 
     list_folder_result = dbx.files_list_folder(path=BASE_PHOTO_FOLDER_PATH + "/" + year)
-    print(list_folder_result)
-    exit()
 
-    while True:
-        for sub_folder in list_folder_result.entries:
-            handle_sub_folder(sub_folder)
+    def process_entries(entries):
+        for sub_folder in entries:
+            folder_list.append(sub_folder.path_lower)
 
-        if not list_folder_result.has_more:
-            break
+    process_entries(list_folder_result.entries)
 
+    while list_folder_result.has_more:
         list_folder_result = dbx.files_list_folder_continue(list_folder_result.cursor)
+
+        process_entries(list_folder_result.entries)
+
+    for sf in folder_list:
+        key = year + sf
+
+        if key not in hist:
+            handle_sub_folder(sf)
+
+            print("Month {} done, up to next month".format(sf))
+            history.add_to_history(key)
+        else:
+            print("{} skipped".format(key))
+
+    # close full year
+    history.add_to_history(year)
+    print("Year {} closed, proceed with next year".format(year))
 
 
 def handle_sub_folder(subfolder):
-    print(subfolder)
+    target_dir = os.path.join(
+        TEMP_FOLDER,
+        subfolder.replace("/fotos/", "").replace("/", "--") + "/",
+    )
 
-    # source = subfolder.path_lower
-    # target_file = (
-    #     "./"
-    #     + TEMP_FOLDER
-    #     + "/"
-    #     + source.replace("/fotos/", "").replace("/", "--")
-    #     + ".zip"
-    # )
+    # create the target dir
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
 
-    # print("Start downloading folder: {0}".format(source))
-    # dbx.files_download_zip_to_file(
-    #     target_file,
-    #     source,
-    # )
-    # print("Finished downloading folder: {0} into {1}".format(source, target_file))
+    # download all photos into the target-dir
+    db_download.get_files(dbx, subfolder, target_dir)
+
+    # zip the target_dir
+
+    # upload the zip to aws (with checksum!)
+
+    # cleanup: remove the zip and target_dir
 
 
-# def get_photos(year, month):
-#     pass
-
-# get_years
-# - per year:   get_months
-# -- per month:
-#  get_photos
-#  zip_photos
-#  generate_hash / checksum
-#  upload_to_aws + verify checksum
-#  delete photos + zip
-#  -> next month
-# -> next year
-
-check_temp_exists()
-get_files_list(YEARS[0])
+if __name__ == "__main__":
+    # reset_temp_dir()
+    for current_year in YEARS:
+        get_files_list(current_year)

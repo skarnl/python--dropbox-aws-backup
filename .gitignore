@@ -1,4 +1,4 @@
 .env
 venv
 __temp_folder__
-.__cache.cfg
+.__*.cfg

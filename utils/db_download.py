@@ -22,35 +22,40 @@ def make_should_download(download_dir, folder_path):
 def get_files(dbx, folder_path, download_dir):
     result = dbx.files_list_folder(folder_path, recursive=True)
 
-    file_list = []
-
     should_download = make_should_download(download_dir, folder_path)
+
+    entry_list = []
 
     def process_entries(entries):
         for entry in entries:
             if isinstance(entry, dropbox.files.FileMetadata):
-                if should_download(entry):
-                    file_list.append(entry.path_lower)
+                entry_list.append(entry)
 
     process_entries(result.entries)
 
-    while result.has_more and len(file_list) < 30:
+    while result.has_more:
         result = dbx.files_list_folder_continue(result.cursor)
 
         process_entries(result.entries)
 
-    file_list = file_list[0:20]
+    # TODO: remove this
+    # WE ONLY TAKE THE FIRST x FILES TO CONTINUE DEVELOPING
+    entry_list = entry_list[0:100]
 
-    print("Downloading " + str(len(file_list)) + " files...")
+    entry_list = list(filter(should_download, entry_list))
 
-    for fn in tqdm(file_list):
-        local_file_path = get_local_path(fn, download_dir, folder_path)
+    print(f"Downloading {str(len(entry_list))} files from {folder_path}")
+
+    for entry in tqdm(entry_list):
+        file_name = entry.path_lower
+
+        local_file_path = get_local_path(file_name, download_dir, folder_path)
         try:
             os.makedirs(os.path.dirname(os.path.abspath(local_file_path)))
         except:
             1 + 1
 
-        dbx.files_download_to_file(local_file_path, fn)
+        dbx.files_download_to_file(local_file_path, file_name)
 
 
 # inspired by https://stackoverflow.com/questions/16891340/remove-a-prefix-from-a-string and

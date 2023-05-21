@@ -6,10 +6,10 @@ import cache
 
 dotenv.load_dotenv()
 
-dropbox_client_id = os.getenv("DROPBOX_CLIENT_ID")
-dropbox_client_secret = os.getenv("DROPBOX_CLIENT_SECRET")
+dropbox_app_key = os.getenv("DROPBOX_APP_KEY")
+dropbox_app_secret = os.getenv("DROPBOX_APP_SECRET")
 
-if not dropbox_client_id or not dropbox_client_secret:
+if not dropbox_app_key or not dropbox_app_secret:
     print("No client_id or client_secret found, provide one in the .env file")
     sys.exit()
 
@@ -29,8 +29,9 @@ def get_dropbox_client():
 
 def start_auth_flow():
     auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(
-        dropbox_client_id,
-        dropbox_client_secret,
+        consumer_key=dropbox_app_key,
+        consumer_secret=dropbox_app_secret,
+        token_access_type='legacy'
     )
 
     authorize_url = auth_flow.start()

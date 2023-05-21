@@ -1,6 +1,6 @@
 import os
 
-CACHE_FILE = ".__cache.cfg"
+CACHE_FILE = ".__dropbox_auth.cache"
 
 
 def get_cached_token():

@@ -39,12 +39,12 @@ def reset_temp_dir():
 
 
 def get_files_list(year):
-    print("Start processing {}".format(year))
+    print(f"Start processing {year}")
 
     hist = history.get_history()
 
     if year in hist:
-        print("Skip {} since thats already handles fully".format(year))
+        print(f"Skip {year} since thats already handles fully")
         return
 
     folder_list = []
@@ -68,14 +68,14 @@ def get_files_list(year):
         if key not in hist:
             handle_sub_folder(sf)
 
-            print("Month {} done, up to next month".format(sf))
+            print(f"Month {sf} done, up to next month")
             history.add_to_history(key)
         else:
-            print("{} skipped".format(key))
+            print(f"{key} skipped")
 
     # close full year
     history.add_to_history(year)
-    print("Year {} closed, proceed with next year".format(year))
+    print(f"Year {year} closed, proceed with next year")
 
 
 def handle_sub_folder(subfolder):

@@ -7,8 +7,8 @@ BASE_PHOTO_FOLDER_PATH = "/fotos"
 TEMP_FOLDER = "./__temp_folder__"
 
 YEARS = [
-    "2007-en-ervoor",
-    # "2008",
+    # "2007-en-ervoor",
+    "2008",
     # "2009",
     # "2010",
     # "2011",
@@ -32,12 +32,15 @@ if not dbx:
 
 
 def reset_temp_dir():
+    print(f"Clearing all files from temp directory: {TEMP_FOLDER}")
+
     if os.path.exists(TEMP_FOLDER):
         shutil.rmtree(TEMP_FOLDER)
 
     os.makedirs(TEMP_FOLDER)
 
 
+# get all folders and files from the given year
 def get_files_list(year):
     print(f"Start processing {year}")
 
@@ -61,6 +64,11 @@ def get_files_list(year):
         list_folder_result = dbx.files_list_folder_continue(list_folder_result.cursor)
 
         process_entries(list_folder_result.entries)
+
+
+    # TODO: REMOVE THIS, ALSO IN db_download WE DO LESS FILES DOWNLOAD
+    folder_list = folder_list[:3]
+
 
     for sf in folder_list:
         key = year + sf
@@ -93,12 +101,17 @@ def handle_sub_folder(subfolder):
 
     # zip the target_dir
 
+
     # upload the zip to aws (with checksum!)
 
     # cleanup: remove the zip and target_dir
 
 
 if __name__ == "__main__":
+
+    # uncomment to reset every local progress
     # reset_temp_dir()
+    history.reset()
+
     for current_year in YEARS:
         get_files_list(current_year)

@@ -1,7 +1,7 @@
 import os
 import pickle
 
-HISTORY_FILE = ".__history.cfg"
+HISTORY_FILE = ".__history.cache"
 
 
 def get_history():
@@ -20,6 +20,11 @@ def add_to_history(folder):
 def write_file():
     with open(HISTORY_FILE, "wb") as fp:
         pickle.dump([], fp)
+
+
+def reset():
+    print(f"History :: Reset history cache")
+    write_file()
 
 
 if not os.path.isfile(HISTORY_FILE):

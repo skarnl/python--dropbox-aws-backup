@@ -2,6 +2,7 @@ import os
 import sys
 
 import dropbox
+import http
 
 from utils import db_download, db_auth, aws_upload
 from utils.colorize import colorize
@@ -23,6 +24,10 @@ TEMP_FOLDER = "./__temp_folder__"
 MAX_MONTHS_TO_PROCESS = 10
 
 months_processed_count = 0
+
+processing = True
+
+refresh_retries = 0
 
 YEARS = [
     # "2007-en-ervoor",
@@ -62,6 +67,7 @@ def reset_temp_dir():
 # get all folders and files from the given year
 def get_files_list(year):
     global months_processed_count
+    global refresh_retries
 
     print(f"Start processing {colorize(year, Fore.BLUE)}")
 
@@ -74,6 +80,8 @@ def get_files_list(year):
     folder_list = []
 
     list_folder_result = dbx.files_list_folder(path=BASE_PHOTO_FOLDER_PATH + "/" + year)
+
+    refresh_retries = 0
 
     def process_entries(entries):
         for sub_folder in entries:
@@ -159,8 +167,23 @@ if __name__ == "__main__":
     # reset_temp_dir()
     # db_history.reset()
 
-    for current_year in YEARS:
-        get_files_list(current_year)
+    while processing:
+        try:
+            for current_year in YEARS:
+                get_files_list(current_year)
 
-        if DEVELOPMENT_MODE:
-            break
+                if DEVELOPMENT_MODE:
+                    processing = False
+                    break
+        except (dropbox.exceptions.AuthError, http.client.RemoteDisconnected) as e:
+            print(colorize("dropbox.exceptions.AuthError", Fore.RED))
+            print(e)
+
+            if refresh_retries > 5:
+                print("We retried multiple times - lets bail")
+                processing = False
+                break
+
+            dbx = db_auth.refresh_client()
+            refresh_retries += 1
+

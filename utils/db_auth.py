@@ -18,22 +18,21 @@ if not dropbox_app_key or not dropbox_app_secret:
 
 def get_dropbox_client():
     # if the access_token exists, don't start the flow
-    existing_access_token = cache.get_cached_token()
+    existing_token = cache.get_cached_token()
 
-    if not existing_access_token:
-        new_access_token = start_auth_flow()
+    if not existing_token:
+        new_token = start_auth_flow()
 
-        cache.store_token_in_cache(new_access_token)
+        cache.store_token_in_cache(new_token)
 
-    # store the access_token
-    return dropbox.Dropbox(oauth2_access_token=cache.get_cached_token())
+    return dropbox.Dropbox(oauth2_refresh_token=cache.get_cached_token(), app_key=dropbox_app_key, app_secret=dropbox_app_secret)
 
 
 def start_auth_flow():
     auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(
         consumer_key=dropbox_app_key,
         consumer_secret=dropbox_app_secret,
-        token_access_type='legacy'
+        token_access_type='offline'
     )
 
     authorize_url = auth_flow.start()
@@ -50,4 +49,10 @@ def start_auth_flow():
 
     print(oauth_result)
 
-    return oauth_result.access_token
+    return oauth_result.refresh_token
+
+
+def refresh_client():
+    print(colorize("Refresh client", Fore.CYAN))
+
+    return get_dropbox_client()

@@ -3,6 +3,8 @@ import os
 import dropbox
 import dotenv
 import cache
+from utils.colorize import colorize
+from colorama import Fore
 
 dotenv.load_dotenv()
 
@@ -10,7 +12,7 @@ dropbox_app_key = os.getenv("DROPBOX_APP_KEY")
 dropbox_app_secret = os.getenv("DROPBOX_APP_SECRET")
 
 if not dropbox_app_key or not dropbox_app_secret:
-    print("No client_id or client_secret found, provide one in the .env file")
+    print(colorize("No client_id or client_secret found, provide one in the .env file", Fore.RED))
     sys.exit()
 
 

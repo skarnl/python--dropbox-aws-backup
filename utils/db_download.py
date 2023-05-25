@@ -2,7 +2,8 @@ import dropbox
 import os
 from tqdm import tqdm
 from utils.db_hash_check import get_file_hash
-
+from utils.colorize import colorize
+from colorama import Fore
 
 def get_local_path(file_path, download_dir, folder_path):
     return remove_suffix(download_dir, "/") + remove_prefix(file_path, folder_path)
@@ -19,7 +20,7 @@ def make_should_download(download_dir, folder_path):
     return _should_download
 
 
-def get_files(dbx, folder_path, download_dir):
+def get_files(dbx, folder_path, download_dir, development_mode=False):
     result = dbx.files_list_folder(folder_path, recursive=True)
 
     should_download = make_should_download(download_dir, folder_path)
@@ -38,13 +39,16 @@ def get_files(dbx, folder_path, download_dir):
 
         process_entries(result.entries)
 
-    # TODO: remove this
-    # WE ONLY TAKE THE FIRST x FILES TO CONTINUE DEVELOPING
-    entry_list = entry_list[0:100]
+    if development_mode:
+        print(colorize(f"RUNNING IN DEVELOPMENT_MODE, SO ONLY 30 FILES ARE PROCESSED", Fore.GREEN))
+
+        entry_list = entry_list[0:100]
+
+    total_file_count = len(entry_list)
 
     entry_list = list(filter(should_download, entry_list))
 
-    print(f"Downloading {str(len(entry_list))} files from {folder_path}")
+    print(f"Downloading { colorize( str(len(entry_list)) + '/' + str(total_file_count), Fore.BLUE ) } files from { colorize(folder_path, Fore.BLUE)}")
 
     for entry in tqdm(entry_list):
         file_name = entry.path_lower

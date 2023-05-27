@@ -3,6 +3,7 @@ import sys
 
 import dropbox
 import http
+import concurrent.futures
 
 from utils import db_download, db_auth, aws_upload
 from utils.colorize import colorize
@@ -169,12 +170,15 @@ if __name__ == "__main__":
 
     while processing:
         try:
-            for current_year in YEARS:
-                get_files_list(current_year)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                executor.map(get_files_list, YEARS)
 
-                if DEVELOPMENT_MODE:
-                    processing = False
-                    break
+            hist = db_history.get_history()
+            if all(x in hist for x in YEARS):
+                print(colorize("We are finished. All years are done.", Fore.GREEN))
+                processing = False
+                break
+
         except (dropbox.exceptions.AuthError, http.client.RemoteDisconnected) as e:
             print(colorize("dropbox.exceptions.AuthError", Fore.RED))
             print(e)
@@ -186,4 +190,5 @@ if __name__ == "__main__":
 
             dbx = db_auth.refresh_client()
             refresh_retries += 1
+
 
